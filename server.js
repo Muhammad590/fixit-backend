@@ -58,6 +58,6 @@ app.use("/api/professional", professionalRoute);
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "./myapp", "build", "index.html"));
 });
-app.listen(PORT, function () {
+app.listen(PORT, "0.0.0.0", function () {
   console.log("Server is running on Port: " + PORT);
 });
