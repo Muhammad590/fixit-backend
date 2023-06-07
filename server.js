@@ -15,7 +15,7 @@ app.use(express.static("images"));
 app.use(express.static(path.join(__dirname, "./myapp/build")));
 app.use("/img", express.static("./Images"));
 
-app.use(cors({ origin: "*" }));
+app.use(cors());
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -40,8 +40,6 @@ app.use(function (req, res, next) {
   next();
 });
 app.set("view engine", "pug");
-
-app.use(cors());
 app.use(bodyParser.json());
 mongoose.connect(
   "mongodb+srv://admin:adminx@cluster0.dadf0ac.mongodb.net/?retryWrites=true&w=majority",
