@@ -40,6 +40,7 @@ ProfessionalRoute.route("/add-professional").post(
     }
 
     const user = await Professional.findOne({ email: req.body.email });
+    console.log("user====", !user);
     if (!user) {
       res.status(500).json({
         message: "Professional already exist",
@@ -64,7 +65,7 @@ ProfessionalRoute.route("/add-professional").post(
         });
         Users.save()
           .then(async (User) => {
-            console.log("data===", User);
+            // console.log("data===", User);
             let id = jwt.sign({ id: User?.id }, "jwtPrivateKey", {
               expiresIn: "10m",
             });
@@ -76,7 +77,7 @@ ProfessionalRoute.route("/add-professional").post(
                   "My First Test Customer (created for API docs at https://www.stripe.com/docs/api)",
                 metadata: { professional_id: User._id.toString() },
               });
-              console.log("kkk===============", customer);
+              // console.log("kkk===============", customer);
               const session = await stripe.checkout.sessions.create({
                 line_items: [
                   { price: "price_1NOR1EImK1h8PcwnxwjJqJw5", quantity: 1 },
