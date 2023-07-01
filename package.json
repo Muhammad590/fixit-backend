@@ -28,6 +28,8 @@
     "nodemailer-smtp-transport": "^2.7.4",
     "pug": "^3.0.2",
     "react-csv": "^2.2.2",
-    "react-tooltip": "^4.2.21"
+    "react-tooltip": "^4.2.21",
+    "socket.io": "^4.7.0",
+    "stripe": "^12.10.0"
   }
 }

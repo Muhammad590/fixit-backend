@@ -1,6 +1,15 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+const ObjectSchema = new Schema({
+  reviewerID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Client",
+  },
+  message: { type: String, required: true },
+  rating: { type: Number, required: true },
+});
+
 let professionalScheema = new Schema({
   name: {
     type: String,
@@ -46,6 +55,7 @@ let professionalScheema = new Schema({
   },
   accountPaymentStatus: {
     type: String,
+    default: false,
   },
   accountType: {
     type: String,
@@ -54,6 +64,11 @@ let professionalScheema = new Schema({
     type: Boolean,
     default: false,
   },
+  chatIds: {
+    type: Array,
+    default: [],
+  },
+  reviews: [ObjectSchema],
 });
 
 const Professional = mongoose.model("Professional", professionalScheema);

@@ -63,51 +63,43 @@ UserRoute.route("/resetpassword").post(function (req, res) {
     }
   );
 });
-
 UserRoute.route("/update").post(function (req, res) {
-  User.findOneAndUpdate(
+  const review = {
+    reviewerID: req.body.reviewerID,
+    message: req.body.message,
+    rating: req.body.rating,
+  };
+  console.log("park view society", review);
+  Professional.findOneAndUpdate(
     { _id: req.body._id },
-    {
-      $push: {
-        review: {
-          sendername: req.body.name,
-          senderid: req.body.senderid,
-          reviewstatus: "pending",
-          rating: req.body.rating,
-        },
-      },
-    },
-
-    function (error, success) {
-      if (error) {
-        res.send("error");
+    { $push: { reviews: review } },
+    { new: true }
+  )
+    .then((updatedDocument) => {
+      if (updatedDocument) {
+        res.status(201).json({
+          Profesional: updatedDocument,
+          message: "professional updated successfully",
+        });
       } else {
-        if (!success) {
-          res.send("invalid");
-        } else {
-          res.status(200).json({ User: success });
-        }
+        res.status(200).json({ message: "professional not found" });
       }
-    }
-  );
+    })
+    .catch((error) => {
+      console.error("Error updating document:", error);
+      res.send("error");
+    });
 });
+UserRoute.route("/find").post(async function (req, res) {
+  try {
+    let user = await User.findOne({ _id: req.body.id }).populate(
+      "reviews.reviewerID"
+    );
 
-UserRoute.route("/find").post(function (req, res) {
-  User.findOne(
-    { _id: req.body.id },
-
-    function (error, success) {
-      if (error) {
-        res.send("error");
-      } else {
-        if (!success) {
-          res.send("invalid");
-        } else {
-          res.status(200).json({ User: success });
-        }
-      }
-    }
-  );
+    res.status(200).json({ User: user });
+  } catch (error) {
+    res.send(error);
+  }
 });
 UserRoute.route("/getallusers").get(function (req, res) {
   Professional.find({}, function (err, users) {
@@ -139,7 +131,6 @@ UserRoute.route("/auth").post(function (req, res) {
     }
   );
 });
-
 UserRoute.route("/delete").post(function (req, res) {
   User.findById({ _id: req.body._id })
     .deleteOne()

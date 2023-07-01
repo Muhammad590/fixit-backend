@@ -14,7 +14,7 @@ UserRoute.route("/add-client").post(
   async function (req, res) {
     let image = null;
     if (req.file) {
-      image = "/img/" + req.file.filename;
+      image = "img/" + req.file.filename;
     }
 
     await bcrypt.hash(req.body.password, 10, (err, hash) => {
@@ -179,7 +179,7 @@ UserRoute.route("/update/:id").put(
   async function (req, res) {
     let image = null;
     if (req.file) {
-      image = "/img/" + req.file.filename;
+      image = "img/" + req.file.filename;
     }
     if (req.body.password) {
       let newPassword = await bcrypt.hash(req.body.password, 10);

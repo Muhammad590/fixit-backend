@@ -42,6 +42,10 @@ let clientScheema = new Schema({
     type: Boolean,
     default: false,
   },
+  chatIds: {
+    type: Array,
+    default: [],
+  },
 });
 
 const Client = mongoose.model("Client", clientScheema);

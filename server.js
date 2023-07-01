@@ -1,21 +1,30 @@
+const http = require("http");
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const {
+  getLastMessagesFromRoom,
+  sortRoomMessagesByDate,
+  createNotificationInDataBase,
+  followingProfessional,
+  followingClient,
+} = require("./utils/chathelper");
+const PORT = process.env.PORT || 4000;
 const mongoose = require("mongoose");
+const path = require("path");
 const subscriberroute = require("./Routes/Subscriber.route");
 const clientRoute = require("./Routes/client");
 const professionalRoute = require("./Routes/professional");
-
-const PORT = process.env.PORT || 4000;
-const path = require("path");
-
-__dirname = path.resolve();
-app.use(express.static("images"));
-app.use(express.static(path.join(__dirname, "./myapp/build")));
-app.use("/img", express.static("./Images"));
+const chatRoute = require("./Routes/chat");
 
 app.use(cors());
+
+// __dirname = path.resolve();
+// app.use(express.static("images"));
+// app.use(express.static(path.join(__dirname, "./myapp/build")));
+app.use("/img", express.static("./Images"));
+
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -49,13 +58,183 @@ const connection = mongoose.connection;
 connection.once("open", function () {
   console.log("MongoDB database connection established successfully");
 });
-app.use("/api/signup", subscriberroute);
-app.use("/api/client", clientRoute);
-app.use("/api/professional", professionalRoute);
 
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "./myapp", "build", "index.html"));
+// socket connection for server
+const server = http.createServer(app);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*",
+  },
 });
-app.listen(PORT, "0.0.0.0", function () {
+function ioMiddleware(req, res, next) {
+  (req.io = io), next();
+}
+// socket server end
+
+app.use("/api/signup", ioMiddleware, subscriberroute);
+app.use("/api/client", ioMiddleware, clientRoute);
+app.use("/api/professional", ioMiddleware, professionalRoute);
+app.use("/api/chat", ioMiddleware, chatRoute);
+
+// app.get("*", (req, res) => {
+//   res.sendFile(path.resolve(__dirname, "./myapp", "build", "index.html"));
+// });
+
+// socket connection for implementation
+
+io.on("connection", async (socket) => {
+  socket.on("connect", () => {
+    console.log("Connected to server");
+  });
+  console.log("A user connected.");
+  // const id = socket.handshake.query.id;
+  // if (id) {
+  //   socket.join(id);
+  //   console.log("Notification active for user====== " + id);
+  // }
+  // socket.on("0", async ({ event, recipients, sender, messageData }) => {
+  //   console.log("event=====", event);
+  //   await createNotificationInDataBase(
+  //     sender.accountType,
+  //     sender.userName,
+  //     sender._id,
+  //     `Congratulate you signed a new contract for ${messageData?.name} campaign`
+  //   );
+  //   await createNotificationInDataBase(
+  //     sender.accountType,
+  //     sender.userName,
+  //     sender._id,
+  //     `Congratulate you start  a new campaign ${messageData?.name}`
+  //   );
+  //   influencers.forEach(async (recipient) => {
+  //     let savedObj = await createNotificationInDataBase(
+  //       "influencer",
+  //       sender.userName,
+  //       recipient._id,
+  //       `Congratulate ${sender.userName} start new campaign`
+  //     );
+  //     if (savedObj) {
+  //       socket.broadcast
+  //         .to(recipient._id.toString())
+  //         .emit("recieve-inf-notification", {
+  //           recipients,
+  //           // messageData,
+  //         });
+  //     }
+  //   });
+
+  //   influencersManagers.forEach(async (recipient) => {
+  //     let savedObj = await createNotificationInDataBase(
+  //       "influencermanager",
+  //       sender.userName,
+  //       recipient._id,
+  //       `Congratulate ${sender.userName} start new campaign`
+  //     );
+  //     if (savedObj) {
+  //       socket.broadcast
+  //         .to(recipient._id.toString())
+  //         .emit("recieve-infmanager-notification", {
+  //           recipients,
+  //           // messageData,
+  //         });
+  //     }
+  //   });
+
+  //   brands.forEach(async (recipient) => {
+  //     let savedObj = await createNotificationInDataBase(
+  //       "brand",
+  //       sender.userName,
+  //       recipient._id,
+  //       `Congratulate ${sender.userName} start new campaign`
+  //     );
+  //     if (savedObj) {
+  //       socket.broadcast
+  //         .to(recipient._id.toString())
+  //         .emit("recieve-brand-notification", {
+  //           recipients,
+  //           // messageData,
+  //         });
+  //     }
+  //   });
+
+  //   brandsManagers.forEach(async (recipient) => {
+  //     let savedObj = await createNotificationInDataBase(
+  //       "brandmanager",
+  //       sender.userName,
+  //       recipient._id,
+  //       `Congratulate ${sender.userName} start new campaign`
+  //     );
+  //     if (savedObj) {
+  //       socket.broadcast
+  //         .to(recipient._id.toString())
+  //         .emit("recieve-brandmanager-notification", {
+  //           recipients,
+  //           // messageData,
+  //         });
+  //     }
+  //   });
+  // });
+
+  // chat logic start
+
+  socket.on("join-room", async (newRoom, priviousRoom, sender, reciever) => {
+    console.log("ali raza want to join==", sender.accountType, reciever._id);
+    socket.join(newRoom);
+    if (newRoom !== priviousRoom) {
+      socket.leave(priviousRoom);
+    }
+    if (sender.accountType === "client") {
+      followingProfessional(sender._id, reciever._id);
+    } else {
+      followingClient(sender._id, reciever._id);
+    }
+    let roomMessages = await getLastMessagesFromRoom(newRoom);
+    console.log("rooom messages ==========", roomMessages);
+    roomMessages = await sortRoomMessagesByDate(roomMessages);
+    socket.emit("room-messages", roomMessages);
+  });
+
+  // socket.on(
+  //   "message-room",
+  //   async (room, content, sender, time, date, reciever) => {
+  //     console.log(sender, reciever, "1122====");
+  //     let savedObj = await createNotificationInDataBase(
+  //       reciever.accountType,
+  //       sender.userName,
+  //       reciever._id,
+  //       `You recieve a new message from ${sender.userName}`
+  //     );
+
+  //     const newMessage = await Message.create({
+  //       content,
+  //       from: sender._id,
+  //       time,
+  //       date,
+  //       to: room,
+  //     });
+  //     if (savedObj) {
+  //       console.log("creeate new message", reciever);
+  //       socket.broadcast
+  //         .to(reciever._id.toString())
+  //         .emit("recieve-new-message", {
+  //           reciever,
+  //         });
+  //     }
+  //     let roomMessages = await getLastMessagesFromRoom(room);
+  //     console.log("get aggregate", roomMessages);
+  //     roomMessages = await sortRoomMessagesByDate(roomMessages);
+  //     /// sending message to room
+  //     io.to(room).emit("room-messages", roomMessages);
+  //     socket.broadcast.emit("notification", room);
+  //   }
+  // );
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+
+// app.listen(PORT, "0.0.0.0", function () {
+server.listen(PORT, function () {
   console.log("Server is running on Port: " + PORT);
 });
