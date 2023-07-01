@@ -86,12 +86,11 @@ ProfessionalRoute.route("/add-professional").post(
                 success_url: `https://fixitfrontend.netlify.app/login`,
                 cancel_url: `https://fixitfrontend.netlify.app/login`,
               });
-            }
-            if (type === "premium") {
               res.status(200).json({
                 url: session.url,
               });
-            } else {
+            }
+            if (type !== "premium") {
               res.status(200).json({
                 message: "Professional added successfully",
               });
