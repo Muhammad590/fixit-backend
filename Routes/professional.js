@@ -20,6 +20,7 @@ ProfessionalRoute.route("/add-professional").post(
     { name: "iu", maxCount: 10 },
   ]),
   async function (req, res) {
+    let type = req.body.accountPaymentStatus;
     let uq = null;
     let ub = null;
     let iu = null;
@@ -63,24 +64,32 @@ ProfessionalRoute.route("/add-professional").post(
             });
             sendEmail(User?.email, "Email Confirmation", "normal", id);
             // stripe payment gateway
-            const customer = await stripe.customers.create({
-              description:
-                "My First Test Customer (created for API docs at https://www.stripe.com/docs/api)",
-              metadata: { professional_id: User._id.toString() },
-            });
-            console.log("kkk===============", customer);
-            const session = await stripe.checkout.sessions.create({
-              line_items: [
-                { price: "price_1NOR1EImK1h8PcwnxwjJqJw5", quantity: 1 },
-              ],
-              mode: "payment",
-              customer: customer.id,
-              success_url: `https://fixitfrontend.netlify.app/login`,
-              cancel_url: `https://fixitfrontend.netlify.app/login`,
-            });
-            res.status(200).json({
-              url: session.url,
-            });
+            if (type === "premium") {
+              const customer = await stripe.customers.create({
+                description:
+                  "My First Test Customer (created for API docs at https://www.stripe.com/docs/api)",
+                metadata: { professional_id: User._id.toString() },
+              });
+              console.log("kkk===============", customer);
+              const session = await stripe.checkout.sessions.create({
+                line_items: [
+                  { price: "price_1NOR1EImK1h8PcwnxwjJqJw5", quantity: 1 },
+                ],
+                mode: "payment",
+                customer: customer.id,
+                success_url: `https://fixitfrontend.netlify.app/login`,
+                cancel_url: `https://fixitfrontend.netlify.app/login`,
+              });
+            }
+            if (type === "premium") {
+              res.status(200).json({
+                url: session.url,
+              });
+            } else {
+              res.status(200).json({
+                message: "Professional added successfully",
+              });
+            }
           })
           .catch((err) => {
             console.log(err);
