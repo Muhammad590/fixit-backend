@@ -39,6 +39,12 @@ ProfessionalRoute.route("/add-professional").post(
       iu = array;
     }
 
+    const user = await Professional.findOne({ email: req.body.email });
+    if (!user) {
+      res.status(500).json({
+        message: "Professional already exist",
+      });
+    }
     // if (session) {
     await bcrypt.hash(req.body.password, 10, (err, hash) => {
       if (err) {
