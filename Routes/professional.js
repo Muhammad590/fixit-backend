@@ -44,6 +44,7 @@ ProfessionalRoute.route("/add-professional").post(
         console.log(" error: ", err);
         return res.status(500).json({ err: err });
       } else {
+        delete req.body["accountPaymentStatus"];
         let Users = new Professional({
           ...req.body,
           accountType: "professional",
