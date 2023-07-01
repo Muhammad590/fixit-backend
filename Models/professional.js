@@ -54,7 +54,7 @@ let professionalScheema = new Schema({
     type: String,
   },
   accountPaymentStatus: {
-    type: Boolen,
+    type: Boolean,
     default: false,
   },
   accountType: {
