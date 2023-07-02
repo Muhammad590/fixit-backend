@@ -109,7 +109,17 @@ UserRoute.route("/getallusers").get(function (req, res) {
       if (!users) {
         res.send(err);
       } else {
-        res.status(200).json({ users });
+        const sortedUsers = users.sort((a, b) => {
+          if (a.accountPaymentStatus === b.accountPaymentStatus) {
+            return 0;
+          } else if (a.accountPaymentStatus) {
+            return -1;
+          } else {
+            return 1;
+          }
+        });
+
+        res.status(200).json({ users: sortedUsers });
       }
     }
   });

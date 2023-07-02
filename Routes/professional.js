@@ -40,13 +40,13 @@ ProfessionalRoute.route("/add-professional").post(
     }
 
     const user = await Professional.findOne({ email: req.body.email });
-    console.log("user====", !user);
-    if (!user) {
-      res.status(500).json({
+    console.log("user====", user !== null, user);
+    if (user !== null) {
+      return res.status(500).json({
         message: "Professional already exist",
       });
     }
-    // if (session) {
+
     await bcrypt.hash(req.body.password, 10, (err, hash) => {
       if (err) {
         console.log(" error: ", err);
@@ -65,7 +65,7 @@ ProfessionalRoute.route("/add-professional").post(
         });
         Users.save()
           .then(async (User) => {
-            // console.log("data===", User);
+            console.log("data===", "User");
             let id = jwt.sign({ id: User?.id }, "jwtPrivateKey", {
               expiresIn: "10m",
             });
@@ -102,9 +102,6 @@ ProfessionalRoute.route("/add-professional").post(
           });
       }
     });
-    // } else {
-    //   res.status(500).json({ message: "Stripe api error" });
-    // }
   }
 );
 ProfessionalRoute.route("/stripe-payment-webhook").post(async function (
