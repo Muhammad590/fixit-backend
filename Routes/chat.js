@@ -2,6 +2,7 @@
 const express = require("express");
 const ChatRoute = express.Router();
 let Chat = require("../Models/chat");
+let userChatNotification = require("../Models/userChatNotification");
 const sendEmail = require("../utils/sendEmail");
 const upload = require("../utils/uploadImages");
 const {
@@ -47,4 +48,17 @@ ChatRoute.route("/delete-room-chat/:roomId").delete(function (req, res) {
     });
 });
 
+ChatRoute.route("/getall-notifications").get(function (req, res) {
+  userChatNotification.find({}, function (err, notifications) {
+    if (err) {
+      res.status(500).json(err);
+    } else {
+      if (!notifications) {
+        res.send(err);
+      } else {
+        res.status(200).json({ notifications });
+      }
+    }
+  });
+});
 module.exports = ChatRoute;

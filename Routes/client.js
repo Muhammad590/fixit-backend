@@ -56,7 +56,7 @@ UserRoute.route("/client-auth").post(function (req, res) {
         let id = jwt.sign({ id: foundObject.id }, "jwtPrivateKey", {
           expiresIn: "10m",
         });
-        sendEmail(foundObject.email, "Email Confirmation", "normal", id);
+        // sendEmail(foundObject.email, "Email Confirmation", "normal", id);
         await bcrypt.compare(
           password,
           foundObject.password,

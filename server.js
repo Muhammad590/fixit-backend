@@ -9,6 +9,7 @@ const {
   createNotificationInDataBase,
   followingProfessional,
   followingClient,
+  sendChatNotifications,
 } = require("./utils/chathelper");
 const PORT = process.env.PORT || 4000;
 const mongoose = require("mongoose");
@@ -17,6 +18,7 @@ const subscriberroute = require("./Routes/Subscriber.route");
 const clientRoute = require("./Routes/client");
 const professionalRoute = require("./Routes/professional");
 const chatRoute = require("./Routes/chat");
+const userChatNotifications = require("./Models/userChatNotification");
 
 app.use(cors());
 
@@ -87,93 +89,32 @@ io.on("connection", async (socket) => {
     console.log("Connected to server");
   });
   console.log("A user connected.");
-  // const id = socket.handshake.query.id;
-  // if (id) {
-  //   socket.join(id);
-  //   console.log("Notification active for user====== " + id);
-  // }
-  // socket.on("0", async ({ event, recipients, sender, messageData }) => {
-  //   console.log("event=====", event);
-  //   await createNotificationInDataBase(
-  //     sender.accountType,
-  //     sender.userName,
-  //     sender._id,
-  //     `Congratulate you signed a new contract for ${messageData?.name} campaign`
-  //   );
-  //   await createNotificationInDataBase(
-  //     sender.accountType,
-  //     sender.userName,
-  //     sender._id,
-  //     `Congratulate you start  a new campaign ${messageData?.name}`
-  //   );
-  //   influencers.forEach(async (recipient) => {
-  //     let savedObj = await createNotificationInDataBase(
-  //       "influencer",
-  //       sender.userName,
-  //       recipient._id,
-  //       `Congratulate ${sender.userName} start new campaign`
-  //     );
-  //     if (savedObj) {
-  //       socket.broadcast
-  //         .to(recipient._id.toString())
-  //         .emit("recieve-inf-notification", {
-  //           recipients,
-  //           // messageData,
-  //         });
-  //     }
-  //   });
+  const id = socket.handshake.query.id;
+  if (id) {
+    socket.join(id);
+    console.log("Notification active for user====== " + id);
+  }
 
-  //   influencersManagers.forEach(async (recipient) => {
-  //     let savedObj = await createNotificationInDataBase(
-  //       "influencermanager",
-  //       sender.userName,
-  //       recipient._id,
-  //       `Congratulate ${sender.userName} start new campaign`
-  //     );
-  //     if (savedObj) {
-  //       socket.broadcast
-  //         .to(recipient._id.toString())
-  //         .emit("recieve-infmanager-notification", {
-  //           recipients,
-  //           // messageData,
-  //         });
-  //     }
-  //   });
+  // chat notifications
+  socket.on(
+    "send-chat-notification",
+    async ({ recipients, message, senderName, roomId, sender, messageTo }) => {
+      console.log("Sending chat notification222", sender);
+      // if (messageTo === "stylist") {
+      //   await followingUser(sender, recipients[0]);
+      // }
 
-  //   brands.forEach(async (recipient) => {
-  //     let savedObj = await createNotificationInDataBase(
-  //       "brand",
-  //       sender.userName,
-  //       recipient._id,
-  //       `Congratulate ${sender.userName} start new campaign`
-  //     );
-  //     if (savedObj) {
-  //       socket.broadcast
-  //         .to(recipient._id.toString())
-  //         .emit("recieve-brand-notification", {
-  //           recipients,
-  //           // messageData,
-  //         });
-  //     }
-  //   });
-
-  //   brandsManagers.forEach(async (recipient) => {
-  //     let savedObj = await createNotificationInDataBase(
-  //       "brandmanager",
-  //       sender.userName,
-  //       recipient._id,
-  //       `Congratulate ${sender.userName} start new campaign`
-  //     );
-  //     if (savedObj) {
-  //       socket.broadcast
-  //         .to(recipient._id.toString())
-  //         .emit("recieve-brandmanager-notification", {
-  //           recipients,
-  //           // messageData,
-  //         });
-  //     }
-  //   });
-  // });
+      await sendChatNotifications(sender + "_" + recipients[0], messageTo);
+      recipients.forEach((recipient) => {
+        socket.broadcast.to(recipient).emit("recieve-chat-notification", {
+          recipients,
+          message,
+          senderName,
+          roomId,
+        });
+      });
+    }
+  );
 
   // chat logic start
 
@@ -188,6 +129,11 @@ io.on("connection", async (socket) => {
     } else {
       followingClient(sender._id, reciever._id);
     }
+    const updatedNotification = await userChatNotifications.findOneAndUpdate(
+      { uniqueId: reciever._id + "_" + sender._id },
+      { count: 0, seen: true },
+      { new: true }
+    );
     let roomMessages = await getLastMessagesFromRoom(newRoom);
     console.log("rooom messages ==========", roomMessages);
     roomMessages = await sortRoomMessagesByDate(roomMessages);
